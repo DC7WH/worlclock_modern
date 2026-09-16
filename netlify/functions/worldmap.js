@@ -211,12 +211,12 @@ body{height:100%}
 .hl-wm-legend i{width:9px;height:9px;border-radius:50%;display:inline-block;border:1.5px solid rgba(255,255,255,.7);box-shadow:0 0 6px rgba(255,255,255,.12)}
 .hl-wm-foot{margin:8px 0 0;text-align:center;font-size:11.5px;color:#5f7288}
 .hl-wm-foot b{color:#8fa1b8;font-weight:600}
-/* Vollbild-Button: im QRZ-iFrame -> oeffnet die Karte in neuem Tab
-   (Sandbox erlaubt Popups). Top-Level -> natives Vollbild (s. Script unten). */
-.wm-fs{position:absolute;right:10px;bottom:10px;z-index:6;display:inline-flex;align-items:center;gap:6px;background:rgba(13,18,32,.92);border:1px solid rgba(0,255,136,.45);color:#00ff88;border-radius:8px;padding:5px 10px;font-family:Consolas,'Courier New',monospace;font-size:11px;font-weight:700;letter-spacing:.08em;text-decoration:none;box-shadow:0 4px 14px rgba(0,0,0,.5);opacity:.6;transition:opacity .18s,transform .18s}
+/* Vollbild-Button: sitzt im Header neben LIVE.
+   Im QRZ-iFrame -> oeffnet die Karte in neuem Tab (Sandbox erlaubt Popups).
+   Top-Level -> natives Vollbild (s. Script unten). */
+.wm-fs{display:inline-flex;align-items:center;gap:6px;background:rgba(0,255,136,.07);border:1px solid rgba(0,255,136,.45);color:#00ff88;border-radius:50px;padding:4px 12px;font-family:Consolas,'Courier New',monospace;font-size:11px;font-weight:700;letter-spacing:.08em;text-decoration:none;white-space:nowrap;text-shadow:0 0 10px rgba(0,255,136,.5)}
 .wm-fs svg{display:block}
-.hl-wm-map-wrap:hover .wm-fs{opacity:1}
-.wm-fs:hover{opacity:1;transform:scale(1.05);text-decoration:none;box-shadow:0 0 16px rgba(0,255,136,.35)}
+.wm-fs:hover{text-decoration:none;box-shadow:0 0 16px rgba(0,255,136,.35);transform:scale(1.03)}
 /* CSS-Ziffernrollen – Ticken ganz ohne JavaScript */
 .wm-roll{display:inline-flex;align-items:flex-start;justify-content:center}
 .wm-c{display:inline-block}
@@ -246,6 +246,7 @@ body{height:100%}
       <p class="hl-wm-sub">24 Metropolen weltweit über alle Kontinente verteilt</p>
     </div>
     <span class="hl-wm-live"><i></i>LIVE</span>
+    <a class="wm-fs" id="wmFsBtn" href="./worldmap" target="_blank" rel="noopener" title="Vollbild in neuem Tab öffnen" aria-label="Vollbild öffnen"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3"/></svg><span>Vollbild</span></a>
   </div>
   <div class="hl-wm-map-wrap" role="img" aria-label="Weltkarte mit 24 Live-Zeitzonen und Grayline">
     <div class="hl-wm-map-bg">
@@ -267,7 +268,7 @@ ${pins}
     <span><i style="background:#db2777"></i> Südamerika</span>
     <span><i style="background:#ea580c"></i> Ozeanien</span>
   </div>
-  <div class="hl-wm-foot">Zeiten: <b>CSS-Rollen, server-seitig gerendert</b> · Sync alle 5 min · ohne JavaScript · Button unten rechts: <b>Vollbild</b> (neuer Tab)</div>
+  <div class="hl-wm-foot">Zeiten: <b>CSS-Rollen, server-seitig gerendert</b> · Sync alle 5 min · ohne JavaScript · <b>Vollbild</b>-Button oben rechts (neuer Tab)</div>
 </div>
 <script>
 (function(){
