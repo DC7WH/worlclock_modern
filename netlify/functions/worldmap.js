@@ -145,8 +145,13 @@ function render(now) {
   const night = nightSvg(now);
 
   const css = `
+/* EINE Box: Rahmen/Border/Schatten kommt vom Bio-Wrapper (dc7wh_bio_V3).
+   Die Seite selbst ist rahmenlos; Hintergrund = gleiche Farbe wie die
+   iFrame-Flaeche in der Bio (#05070d) -> wirkt wie eine einzige Box. */
+html,body{margin:0;padding:0;background:#05070d}
+body{height:100%}
 .hl-wm-page, .hl-wm-page *{box-sizing:border-box}
-.hl-wm-page{width:100%;max-width:900px;margin:0 auto;background:rgba(13,18,32,.85);border:1px solid rgba(0,255,136,.25);border-radius:12px;box-shadow:0 24px 60px rgba(0,0,0,.55);padding:24px 24px 14px;color:#e0e8f0;font-family:"Segoe UI",Tahoma,Geneva,Verdana,sans-serif;text-align:left;line-height:1.4}
+.hl-wm-page{width:100%;max-width:100%;margin:0 auto;background:transparent;border:none;border-radius:0;box-shadow:none;padding:22px 22px 12px;color:#e0e8f0;font-family:"Segoe UI",Tahoma,Geneva,Verdana,sans-serif;text-align:left;line-height:1.4}
 .hl-wm-head{display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap}
 .hl-wm-head h2{margin:0;font-size:22px;font-weight:800;letter-spacing:-.02em;line-height:1.2;font-family:'Open Sans','Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:linear-gradient(135deg,#00ff88,#0099ff);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:#00ff88}
 .hl-wm-head .hl-wm-sub{margin:3px 0 0;font-size:12.5px;color:#8fa1b8;line-height:1.3}
@@ -214,7 +219,7 @@ function render(now) {
 .wm-rl li{display:block;height:16px;line-height:16px;text-align:center}
 @keyframes wm-roll{to{transform:translateY(calc(-16px*var(--n)))}}
 @media(max-width:900px){.hl-wm-pin-label{min-width:80px;padding:5px 6px}.hl-wm-pin-city{font-size:8.2px}.hl-wm-pin-time{font-size:11.5px}.hl-wm-pin-date{font-size:8.8px}.wm-rl{height:14px}.wm-rl li{height:14px;line-height:14px}@keyframes wm-roll{to{transform:translateY(calc(-14px*var(--n)))}}}
-@media(max-width:640px){.hl-wm-page{padding:16px 12px 12px;border-radius:14px}.hl-wm-head h2{font-size:18px}.hl-wm-pin-label{min-width:72px;padding:4px 5px}.hl-wm-pin-time{font-size:10.5px}.wm-rl{height:12.5px}.wm-rl li{height:12.5px;line-height:12.5px}@keyframes wm-roll{to{transform:translateY(calc(-12.5px*var(--n)))}}}
+@media(max-width:640px){.hl-wm-page{padding:14px 10px 10px}.hl-wm-head h2{font-size:18px}.hl-wm-pin-label{min-width:72px;padding:4px 5px}.hl-wm-pin-time{font-size:10.5px}.wm-rl{height:12.5px}.wm-rl li{height:12.5px;line-height:12.5px}@keyframes wm-roll{to{transform:translateY(calc(-12.5px*var(--n)))}}}
 @media(max-width:480px){.hl-wm-pin-date{display:none}.hl-wm-pin-label{min-width:64px}}
 `;
 
