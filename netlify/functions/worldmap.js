@@ -158,7 +158,7 @@ body{height:100%}
 .hl-wm-live{margin-left:auto;display:inline-flex;align-items:center;gap:7px;color:#00ff88;border:1px solid rgba(0,255,136,.45);background:rgba(0,255,136,.07);border-radius:50px;padding:4px 12px;font-family:Consolas,'Courier New',monospace;font-size:11px;letter-spacing:.12em;white-space:nowrap;font-weight:700;text-shadow:0 0 10px rgba(0,255,136,.5)}
 .hl-wm-live i{width:7px;height:7px;border-radius:50%;background:#00ff88;box-shadow:0 0 8px rgba(0,255,136,.9);animation:hlwm-pulse 1.6s ease-in-out infinite;display:inline-block}
 @keyframes hlwm-pulse{0%,100%{opacity:1}50%{opacity:.35}}
-.hl-wm-map-wrap{position:relative;background:#05070d;border:1px solid rgba(0,255,136,.18);border-radius:14px;overflow:hidden;isolation:isolate;box-shadow:inset 0 0 40px rgba(0,0,0,.4),0 0 30px rgba(0,153,255,.06)}
+.hl-wm-map-wrap{position:relative;background:#05070d;border:none;border-radius:14px;overflow:hidden;isolation:isolate;box-shadow:inset 0 0 40px rgba(0,0,0,.4)}
 .hl-wm-map-bg{position:relative;display:block;width:100%;line-height:0;background:#05070d}
 .hl-wm-map-bg img{width:100%;height:auto;display:block}
 .wm-night{position:absolute;inset:0;width:100%;height:100%;z-index:1;pointer-events:none;mix-blend-mode:multiply}
@@ -211,6 +211,12 @@ body{height:100%}
 .hl-wm-legend i{width:9px;height:9px;border-radius:50%;display:inline-block;border:1.5px solid rgba(255,255,255,.7);box-shadow:0 0 6px rgba(255,255,255,.12)}
 .hl-wm-foot{margin:8px 0 0;text-align:center;font-size:11.5px;color:#5f7288}
 .hl-wm-foot b{color:#8fa1b8;font-weight:600}
+/* Vollbild-Button: im QRZ-iFrame -> oeffnet die Karte in neuem Tab
+   (Sandbox erlaubt Popups). Top-Level -> natives Vollbild (s. Script unten). */
+.wm-fs{position:absolute;right:10px;bottom:10px;z-index:6;display:inline-flex;align-items:center;gap:6px;background:rgba(13,18,32,.92);border:1px solid rgba(0,255,136,.45);color:#00ff88;border-radius:8px;padding:5px 10px;font-family:Consolas,'Courier New',monospace;font-size:11px;font-weight:700;letter-spacing:.08em;text-decoration:none;box-shadow:0 4px 14px rgba(0,0,0,.5);opacity:.6;transition:opacity .18s,transform .18s}
+.wm-fs svg{display:block}
+.hl-wm-map-wrap:hover .wm-fs{opacity:1}
+.wm-fs:hover{opacity:1;transform:scale(1.05);text-decoration:none;box-shadow:0 0 16px rgba(0,255,136,.35)}
 /* CSS-Ziffernrollen – Ticken ganz ohne JavaScript */
 .wm-roll{display:inline-flex;align-items:flex-start;justify-content:center}
 .wm-c{display:inline-block}
@@ -249,6 +255,7 @@ body{height:100%}
 ${pins}
       </div>
     </div>
+    <a class="wm-fs" id="wmFsBtn" href="./worldmap" target="_blank" rel="noopener" title="Vollbild in neuem Tab öffnen" aria-label="Vollbild öffnen"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3"/></svg><span>Vollbild</span></a>
   </div>
   <div class="hl-wm-legend" aria-hidden="true">
     <span><i style="background:#2563eb"></i> UTC</span>
@@ -260,8 +267,29 @@ ${pins}
     <span><i style="background:#db2777"></i> Südamerika</span>
     <span><i style="background:#ea580c"></i> Ozeanien</span>
   </div>
-  <div class="hl-wm-foot">Zeiten: <b>CSS-Rollen, server-seitig gerendert</b> · Sync alle 5 min · ganz ohne JavaScript – QRZ-tauglich</div>
+  <div class="hl-wm-foot">Zeiten: <b>CSS-Rollen, server-seitig gerendert</b> · Sync alle 5 min · ohne JavaScript · Button unten rechts: <b>Vollbild</b> (neuer Tab)</div>
 </div>
+<script>
+(function(){
+  try{
+    /* NUR ausserhalb von iFrames aktiv (im QRZ-iFrame blockiert die Sandbox
+       Scripte sowieso – dort bleibt der Button einfach ein Tab-Oeffner). */
+    if(window.top!==window.self){return;}
+    var btn=document.getElementById('wmFsBtn');
+    if(!btn){return;}
+    btn.title='Vollbild umschalten (ESC verlässt)';
+    btn.addEventListener('click',function(ev){
+      ev.preventDefault();
+      var el=document.documentElement;
+      if(document.fullscreenElement||document.webkitFullscreenElement){
+        if(document.exitFullscreen){document.exitFullscreen();}
+        else if(document.webkitExitFullscreen){document.webkitExitFullscreen();}
+      }else if(el.requestFullscreen){el.requestFullscreen();}
+      else if(el.webkitRequestFullscreen){el.webkitRequestFullscreen();}
+    });
+  }catch(e){}
+})();
+</script>
 </body>
 </html>`;
 }
@@ -288,7 +316,8 @@ if (process.argv[2] === 'selftest') {
   console.log('Berlin sod:', berlin.sod, '| UTC sod:', utc.sod, '| Differenz (Erwartet CEST = 7200):', berlin.sod - utc.sod);
   console.log('HTML:', html.length, 'Bytes | Rollen gesamt (erw. 78):', (html.match(/--p:/g) || []).length,
               '| SVG-Pfade (erw. 4):', (html.match(/<path/g) || []).length,
-              '| Scripts (erw. 0):', (html.match(/<script/gi) || []).length);
+              '| Scripts (erw. 1 = nur Top-Level-Vollbild):', (html.match(/<script/gi) || []).length,
+              '| Vollbild-Button:', html.includes('id="wmFsBtn"'));
   console.log('Delay-Min/Max:', Math.min(...delays), Math.max(...delays), '(muessen 0..86399 liegen)');
   const nan = /NaN|undefined/.test(html);
   console.log('NaN/undefined im HTML:', nan);
