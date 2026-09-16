@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Weltzeitkarte · Grayline live · DC7WH</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@700;800&display=swap');
+  html,body{margin:0;padding:0;background:transparent}
+  body{padding:8px 4px;font-family:"Segoe UI",Tahoma,Geneva,Verdana,sans-serif}
+
+.hl-wm-page, .hl-wm-page *{box-sizing:border-box}
+  .hl-wm-page{
+    width:100%;max-width:900px;margin:0 auto;
+    background:rgba(13,18,32,.85);border:1px solid rgba(0,255,136,.25);border-radius:12px;
+    box-shadow:0 24px 60px rgba(0,0,0,.55);padding:24px 24px 14px;
+    color:#e0e8f0;font-family:"Segoe UI",Tahoma,Geneva,Verdana,sans-serif;
+    text-align:left;line-height:1.4;
+  }
+  .hl-wm-head{display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap}
+  .hl-wm-head h2{margin:0;font-size:22px;font-weight:700;letter-spacing:-.02em;line-height:1.2;font-family:"Open Sans","Segoe UI",Tahoma,Geneva,Verdana,sans-serif;background:linear-gradient(135deg,#00ff88,#0099ff);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:#00ff88}
+  .hl-wm-head .hl-wm-sub{margin:3px 0 0;font-size:12.5px;color:#8fa1b8;line-height:1.3}
+  .hl-wm-live{margin-left:auto;display:inline-flex;align-items:center;gap:7px;color:#00ff88;border:1px solid rgba(0,255,136,.45);background:rgba(0,255,136,.07);border-radius:50px;padding:4px 12px;font-family:Consolas,"Courier New",monospace;font-size:11px;letter-spacing:.12em;white-space:nowrap;font-weight:700;text-shadow:0 0 10px rgba(0,255,136,.5)}
+  .hl-wm-live i{width:7px;height:7px;border-radius:50%;background:#00ff88;box-shadow:0 0 8px rgba(0,255,136,.9);animation:hlwm-pulse 1.6s ease-in-out infinite;display:inline-block}
+  @keyframes hlwm-pulse{0%,100%{opacity:1}50%{opacity:.35}}
+
+  .hl-wm-map-wrap{
+    position:relative;background:#05070d;border:1px solid rgba(0,255,136,.18);border-radius:14px;
+    overflow:hidden;isolation:isolate;cursor:zoom-in;touch-action:manipulation;
+    box-shadow:inset 0 0 40px rgba(0,0,0,.4),0 0 30px rgba(0,153,255,.06);
+  }
+  .hl-wm-map-bg{position:relative;display:block;width:100%;line-height:0;background:#05070d}
+  .hl-wm-map-bg img{width:100%;height:auto;display:block;object-fit:contain}
+  .hl-wm-pins{position:absolute;inset:0;width:100%;height:100%;z-index:2}
+  /* Nachtschatten */
+  .hl-wm-night{position:absolute;inset:0;z-index:1;pointer-events:none;overflow:hidden;border-radius:14px}
+  .hl-wm-night-canvas{position:absolute;inset:0;width:100%;height:100%;display:block;pointer-events:none;mix-blend-mode:multiply;opacity:1;border-radius:14px}
+  .hl-wm-night-a,.hl-wm-night-b{position:absolute;top:-6%;bottom:-6%;background:rgba(15,23,42,.46);backdrop-filter:blur(0px);-webkit-backdrop-filter:blur(0px);box-shadow:inset 0 0 40px rgba(2,6,23,.18)}
+  .hl-wm-night-a::after,.hl-wm-night-b::after{content:"";position:absolute;top:0;bottom:0;width:34px;opacity:.95;filter:blur(8px)}
+  .hl-wm-night-a::after{right:-17px;background:linear-gradient(90deg,rgba(15,23,42,.46) 0%,rgba(15,23,42,0) 100%)}
+  .hl-wm-night-b::after{left:-17px;background:linear-gradient(90deg,rgba(15,23,42,0) 0%,rgba(15,23,42,.46) 100%)}
+  .hl-wm-night-a.hl-wm-night-single::after{right:-17px;left:auto}
+  .hl-wm-night-label{position:absolute;left:50%;top:8px;transform:translateX(-50%);background:rgba(15,23,42,.72);color:#e2e8f0;border:1px solid rgba(255,255,255,.14);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);font-family:Consolas,"Courier New",monospace;font-size:9px;letter-spacing:.10em;text-transform:uppercase;padding:3px 8px;border-radius:999px;white-space:nowrap;pointer-events:none;opacity:.9;display:inline-flex;align-items:center;gap:6px}
+  .hl-wm-moon{width:10px;height:10px;fill:#fcd34d;flex-shrink:0;display:block}
+
+  /* Vollbild (nativ + Fallback) */
+  .hl-wm-map-wrap:fullscreen,.hl-wm-map-wrap:-webkit-full-screen{
+    cursor:zoom-out;border-radius:0;border:none;padding:0;
+    display:flex;align-items:center;justify-content:center;background:#0b1220;
+  }
+  .hl-wm-map-wrap:fullscreen .hl-wm-map-bg,.hl-wm-map-wrap:-webkit-full-screen .hl-wm-map-bg{
+    width:min(100vw,181.82vh);box-shadow:0 0 40px rgba(0,0,0,.5);
+  }
+  .hl-wm-map-wrap.hl-wm-fs-fallback{
+    position:fixed;inset:0;z-index:99999;margin:0;padding:0;cursor:zoom-out;
+    border-radius:0;border:none;display:flex;align-items:center;justify-content:center;background:#0b1220;
+  }
+  .hl-wm-map-wrap.hl-wm-fs-fallback .hl-wm-map-bg{width:min(100vw,181.82vh);box-shadow:0 0 40px rgba(0,0,0,.5)}
+
+  /* Vollbild-Schaltfläche */
+  .hl-wm-fs-btn{position:absolute;right:10px;bottom:10px;z-index:6;background:rgba(13,18,32,.92);border:1px solid rgba(255,255,255,.16);border-radius:8px;padding:6px;cursor:pointer;line-height:0;box-shadow:0 4px 14px rgba(0,0,0,.5);opacity:.55;transition:opacity .18s,transform .18s}
+  .hl-wm-fs-btn:hover{opacity:1;transform:scale(1.05)}
+  .hl-wm-map-wrap:hover .hl-wm-fs-btn{opacity:1}
+  .hl-wm-fs-btn:focus-visible{opacity:1;outline:2px solid #0099ff;outline-offset:2px}
+  .hl-wm-fs-btn svg{width:15px;height:15px;stroke:#e0e8f0;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round;display:block}
+  .hl-wm-fs-btn .hl-wm-ico-close{display:none}
+  .hl-wm-map-wrap:fullscreen .hl-wm-fs-btn,.hl-wm-map-wrap:-webkit-full-screen .hl-wm-fs-btn,
+  .hl-wm-map-wrap.hl-wm-fs-fallback .hl-wm-fs-btn{opacity:1}
+  .hl-wm-map-wrap:fullscreen .hl-wm-ico-open,.hl-wm-map-wrap:-webkit-full-screen .hl-wm-ico-open,
+  .hl-wm-map-wrap.hl-wm-fs-fallback .hl-wm-ico-open{display:none}
+  .hl-wm-map-wrap:fullscreen .hl-wm-ico-close,.hl-wm-map-wrap:-webkit-full-screen .hl-wm-ico-close,
+  .hl-wm-map-wrap.hl-wm-fs-fallback .hl-wm-ico-close{display:block}
+
+  .hl-wm-pin{
+    position:absolute;transform:translate(-50%,-100%);display:flex;flex-direction:column;align-items:center;gap:4px;
+    cursor:default;user-select:none;z-index:2;transition:z-index .15s;
+  }
+  .hl-wm-pin:hover{z-index:30}
+  .hl-wm-pin-dot{
+    width:11px;height:11px;border-radius:50%;background:#0f172a;border:2px solid #fff;
+    box-shadow:0 2px 8px rgba(15,23,42,.28),0 0 0 3px rgba(15,23,42,.07);position:relative;flex-shrink:0;
+  }
+  .hl-wm-pin-dot::after{
+    content:"";position:absolute;inset:-6px;border-radius:50%;border:1.5px solid currentColor;opacity:.16;
+    animation:hlwm-ping 2.4s ease-out infinite;
+  }
+  @keyframes hlwm-ping{0%{transform:scale(.6);opacity:.3}100%{transform:scale(1.9);opacity:0}}
+  .hl-wm-pin-dot.hl-wm-dot-utc{background:#2563eb;color:#2563eb}
+  .hl-wm-pin-dot.hl-wm-dot-home{background:#0d9488;color:#0d9488;box-shadow:0 2px 10px rgba(13,148,136,.35),0 0 0 4px rgba(13,148,136,.14)}
+  .hl-wm-pin-dot.hl-wm-dot-eu{background:#0f172a;color:#0f172a}
+  .hl-wm-pin-dot.hl-wm-dot-africa{background:#d97706;color:#d97706}
+  .hl-wm-pin-dot.hl-wm-dot-asia{background:#7c3aed;color:#7c3aed}
+  .hl-wm-pin-dot.hl-wm-dot-oceania{background:#ea580c;color:#ea580c}
+  .hl-wm-pin-dot.hl-wm-dot-na{background:#334155;color:#334155}
+  .hl-wm-pin-dot.hl-wm-dot-sa{background:#db2777;color:#db2777}
+
+  .hl-wm-pin-label{
+    position:relative;
+    background:linear-gradient(180deg,rgba(15,23,42,.90),rgba(8,13,26,.94));
+    backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+    border:1px solid rgba(255,255,255,.14);border-radius:9px;padding:6px 9px 5px;min-width:88px;
+    box-shadow:0 8px 22px rgba(0,0,0,.38),inset 0 1px 0 rgba(255,255,255,.08);
+    text-align:center;line-height:1.2;pointer-events:none;
+    transition:transform .18s ease,border-color .18s,box-shadow .18s;
+  }
+  .hl-wm-pin-label::before{
+    content:"";position:absolute;left:10px;right:10px;top:0;height:2px;border-radius:2px 2px 0 0;
+    background:var(--hlwm-accent,#94a3b8);opacity:.9;
+  }
+  .hl-wm-pin:hover .hl-wm-pin-label{transform:translateY(-2px) scale(1.04);border-color:rgba(255,255,255,.28);box-shadow:0 12px 28px rgba(0,0,0,.48),inset 0 1px 0 rgba(255,255,255,.1)}
+  .hl-wm-pin-city{display:block;font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(226,232,240,.72);font-family:Consolas,"Courier New",monospace;white-space:nowrap}
+  .hl-wm-pin-time{display:block;font-size:13.5px;font-weight:800;color:#fff;font-family:Consolas,"Courier New",monospace;font-variant-numeric:tabular-nums;white-space:nowrap;margin-top:3px;letter-spacing:-.02em;text-shadow:0 1px 3px rgba(0,0,0,.5)}
+  .hl-wm-pin-date{display:block;font-size:9.5px;color:rgba(148,163,184,.85);font-family:Consolas,"Courier New",monospace;font-variant-numeric:tabular-nums;white-space:nowrap;margin-top:2px}
+
+  /* Farbakzent der Kachel je Kontinent (Balken oben + Städtename) */
+  .hl-wm-pin-dot.hl-wm-dot-utc + .hl-wm-pin-label{--hlwm-accent:#3b82f6}
+  .hl-wm-pin-dot.hl-wm-dot-utc + .hl-wm-pin-label .hl-wm-pin-city{color:#93c5fd}
+  .hl-wm-pin-dot.hl-wm-dot-home + .hl-wm-pin-label{--hlwm-accent:#2dd4bf;border-color:rgba(45,212,191,.35)}
+  .hl-wm-pin-dot.hl-wm-dot-home + .hl-wm-pin-label .hl-wm-pin-city{color:#5eead4}
+  .hl-wm-pin-dot.hl-wm-dot-eu + .hl-wm-pin-label{--hlwm-accent:#cbd5e1}
+  .hl-wm-pin-dot.hl-wm-dot-eu + .hl-wm-pin-label .hl-wm-pin-city{color:#cbd5e1}
+  .hl-wm-pin-dot.hl-wm-dot-africa + .hl-wm-pin-label{--hlwm-accent:#f59e0b}
+  .hl-wm-pin-dot.hl-wm-dot-africa + .hl-wm-pin-label .hl-wm-pin-city{color:#fbbf24}
+  .hl-wm-pin-dot.hl-wm-dot-asia + .hl-wm-pin-label{--hlwm-accent:#a78bfa}
+  .hl-wm-pin-dot.hl-wm-dot-asia + .hl-wm-pin-label .hl-wm-pin-city{color:#c4b5fd}
+  .hl-wm-pin-dot.hl-wm-dot-oceania + .hl-wm-pin-label{--hlwm-accent:#fb923c}
+  .hl-wm-pin-dot.hl-wm-dot-oceania + .hl-wm-pin-label .hl-wm-pin-city{color:#fdba74}
+  .hl-wm-pin-dot.hl-wm-dot-na + .hl-wm-pin-label{--hlwm-accent:#94a3b8}
+  .hl-wm-pin-dot.hl-wm-dot-na + .hl-wm-pin-label .hl-wm-pin-city{color:#cbd5e1}
+  .hl-wm-pin-dot.hl-wm-dot-sa + .hl-wm-pin-label{--hlwm-accent:#f472b6}
+  .hl-wm-pin-dot.hl-wm-dot-sa + .hl-wm-pin-label .hl-wm-pin-city{color:#f9a8d4}
+
+  /* leichte Versätze für dichte Europa-Zone */
+  .hl-wm-pin[data-city="koeln"] .hl-wm-pin-label{transform:translateX(14px)}
+  .hl-wm-pin[data-city="koeln"]:hover .hl-wm-pin-label{transform:translateX(14px) translateY(-2px) scale(1.04)}
+  .hl-wm-pin[data-city="paris"] .hl-wm-pin-label{transform:translateX(-14px)}
+  .hl-wm-pin[data-city="paris"]:hover .hl-wm-pin-label{transform:translateX(-14px) translateY(-2px) scale(1.04)}
+  .hl-wm-pin[data-city="london"] .hl-wm-pin-label{transform:translateY(-4px)}
+  .hl-wm-pin[data-city="london"]:hover .hl-wm-pin-label{transform:translateY(-6px) scale(1.04)}
+  .hl-wm-pin[data-city="utc"] .hl-wm-pin-label{transform:translateX(-12px) translateY(2px)}
+  .hl-wm-pin[data-city="utc"]:hover .hl-wm-pin-label{transform:translateX(-12px) translateY(0px) scale(1.04)}
+
+  .hl-wm-legend{display:flex;flex-wrap:wrap;gap:6px 14px;justify-content:center;margin:10px 0 4px;font-size:10.5px;color:#8fa1b8;font-family:Consolas,"Courier New",monospace}
+  .hl-wm-legend span{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+  .hl-wm-legend i{width:9px;height:9px;border-radius:50%;display:inline-block;border:1.5px solid rgba(255,255,255,.7);box-shadow:0 0 6px rgba(255,255,255,.12)}
+
+  .hl-wm-foot{margin:8px 0 0;text-align:center;font-size:11.5px;color:#5f7288}
+
+  /* Mobil: kompakter */
+  @media(max-width:900px){
+    .hl-wm-pin-label{min-width:76px;padding:5px 6px}
+    .hl-wm-pin-city{font-size:8.2px}
+    .hl-wm-pin-time{font-size:11.5px}
+    .hl-wm-pin-date{font-size:8.8px}
+    .hl-wm-pin-dot{width:9px;height:9px}
+  }
+  @media(max-width:640px){
+    .hl-wm-page{padding:16px 12px 12px;border-radius:14px}
+    .hl-wm-head h2{font-size:18px}
+    .hl-wm-map-wrap{border-radius:10px}
+    .hl-wm-pin-label{min-width:68px;padding:4px 5px}
+    .hl-wm-pin-city{font-size:7.4px;letter-spacing:.07em}
+    .hl-wm-pin-time{font-size:10.5px}
+    .hl-wm-pin-date{font-size:8px}
+    .hl-wm-pin-dot{width:8px;height:8px;border-width:1.8px}
+    /* Pins leicht skalieren damit alle sichtbar bleiben */
+  }
+  @media(max-width:480px){
+    .hl-wm-pin-date{display:none}
+    .hl-wm-pin-label{min-width:62px}
+  }
+</style>
+</head>
+<body>
+<div class="hl-wm-page" id="hlWmPage">
+  <div class="hl-wm-head">
+    <div>
+      <h2>Weltzeitkarte</h2>
+      <p class="hl-wm-sub">24 Metropolen weltweit über alle Kontinente verteilt</p>
+    </div>
+    <span class="hl-wm-live"><i></i>LIVE</span>
+  </div>
+
+  <div class="hl-wm-map-wrap" id="hlWmMapWrap" role="img" aria-label="Weltkarte mit 24 Live-Zeitzonen auf allen Kontinenten" title="Klicken für Vollbild">
+    <div class="hl-wm-map-bg">
+      <img src="https://www.darc.de/fileadmin/filemounts/distrikte/g/ortsverbaende/24/Dateien/Code/Weltzeitkarte/world-map-option3.webp" alt="" width="1200" height="800" loading="lazy" decoding="async" />
+      <div class="hl-wm-night" aria-hidden="true" id="hlWmNight">
+        <canvas class="hl-wm-night-canvas" id="hlWmNightCanvas" width="1000" height="500" aria-hidden="true"></canvas>
+        <div class="hl-wm-night-label"><svg class="hl-wm-moon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>Nacht  ·  Grayline — live</div>
+      </div>
+      <div class="hl-wm-pins">
+
+      <!-- EUROPA -->
+      <div class="hl-wm-pin" data-city="reykjavik" style="left:43.2%; top:22.8%;" title="Reykjavík">
+        <div class="hl-wm-pin-dot hl-wm-dot-eu"></div>
+        <div class="hl-wm-pin-label"><span class="hl-wm-pin-city">Reykjavík</span><span class="hl-wm-pin-time" id="hlWmTimeReykjavik">--:--:--</span><span class="hl-wm-pin-date" id="hlWmDateReykjavik">--.--.----</span></div>
+      </div>
+      <div class="hl-wm-pin" data-city="london" style="left:48.2%; top:29.6%;" title="London">
+        <div class="hl-wm-pin-dot hl-wm-dot-eu"></div>
+        <div class="hl-wm-pin-label"><span class="hl-wm-pin-city">London</span><span class="hl-wm-pin-time" id="hlWmTimeLondon">--:--:--</span><span class="hl-wm-pin-date" id="hlWmDateLondon">--.--.----</span></div>
+      </div>
+      <div class="hl-wm-pin" data-city="koeln" style="left:49.9%; top:31.4%;" title="Köln">
+        <div class="hl-wm-pin-dot hl-wm-dot-home"></div>
+        <div class="hl-wm-pin-label"><span class="hl-wm-pin-city">Köln ★</span><span class="hl-wm-pin-time" id="hlWmTimeKoeln">--:--:--</span><span class="hl-wm-pin-date" id="hlWmDateKoeln">--.--.----</span></div>
+      </div>
+      <div class="hl-wm-pin" data-city="paris" style="left:49.6%; top:35.0%;" title="Paris">
+        <div class="hl-wm-pin-dot hl-wm-dot-eu"></div>
+        <div class="hl-wm-pin-label"><span class="hl-wm-pin-city">Paris</span><span class="hl-wm-pin-time" id="hlWmTimeParis">--:--:--</span><span class="hl-wm-pin-date" id="hlWmDateParis">--.--.----</span></div>
+      </div>
+      <div class="hl-wm-pin" data-city="utc" style="left:47.0%; top:34.4%;" title="UTC">
+        <div class="hl-wm-pin-dot hl-wm-dot-utc"></div>
+        <div class="hl-wm-pin-label"><span class="hl-wm-pin-city">UTC</span><span class="hl-wm-pin-time" id="hlWmTimeUtc">--:--:--</span><span class="hl-wm-pin-date" id="hlWmDateUtc">--.--.----</span></div>
+      </div>
+      <div class="hl-wm-pin" data-city="istanbul" style="left:54.4%; top:36.0%;" title="Istanbul">
+        <div class="hl-wm-pin-dot hl-wm-dot-eu"></div>
+        <div class="hl-wm-pin-label"><span class="hl-wm-pin-city">Istanbul</span><span class="hl-wm-pin-time" id="hlWmTimeIstanbul">--:--:--</span><span class="hl-wm-pin-date" id="hlWmDateIstanbul">--.--.----</span></div>
+      </div>
+      <div class="hl-wm-pin" data-city="moskau" style="left:58.6%; top:28.8%;" title="Moskau">
+        <div class="hl-wm-pin-dot hl-wm-dot-eu"></div>
+        <div class="hl-wm-pin-label"><span class="hl-wm-pin-city">Moskau</span><span class="hl-wm-pin-time" id="hlWmTimeMoskau">--:--:--</span><span class="hl-wm-pin-date" id="hlWmDateMoskau">--.--.----</span></div>
+      </div>
+
+      <!-- AFRIKA -->
+      <div class="hl-wm-pin" data-city="kairo" style="left:55.0%; top:39.4%;" title="Kairo">
+        <div class="hl-wm-pin-dot hl-wm-dot-africa"></div>
+        <div class="hl-wm-pin-label"><span class="hl-wm-pin-city">Kairo</span><span class="hl-wm-pin-time" id="hlWmTimeKairo">--:--:--</span><span class="hl-wm-pin-date" id="hlWmDateKairo">--.--.----</span></div>
+      </div>
+      <div class="hl-wm-pin" data-city="nairobi" style="left:58.2%; top:55.4%;" title="Nairobi">
+        <div class="hl-wm-pin-dot hl-wm-dot-africa"></div>
+        <div class="hl-wm-pin-label"><span class="hl-wm-pin-city">Nairobi</span><span class="hl-wm-pin-time" id="hlWmTimeNairobi">--:--:--</span><span class="hl-wm-pin-date" id="hlWmDateNairobi">--.--.----</span></div>
+      </div>
+      <div class="hl-wm-pin" data-city="kapstadt" style="left:53.8%; top:73.6%;" title="Kapstadt">
+        <div class="hl-wm-pin-dot hl-wm-dot-africa"></div>
+        <div class="hl-wm-pin-label"><span class="hl-wm-pin-city">Kapstadt</span><span class="hl-wm-pin-time" id="hlWmTimeKapstadt">--:--:--</span><span class="hl-wm-pin-date" id="hlWmDateKapstadt">--.--.----</span></div>
+      </div>
+
+      <!-- ASIEN / NAHER OSTEN / INDIEN -->
+      <div class="hl-wm-pin" data-city="dubai" style="left:60.8%; top:42.2%;" title="Dubai">
+        <div class="hl-wm-pin-dot hl-wm-dot-asia"></div>
+        <div class="hl-wm-pin-label"><span class="hl-wm-pin-city">Dubai</span><span class="hl-wm-pin-time" id="hlWmTimeDubai">--:--:--</span><span class="hl-wm-pin-date" id="hlWmDateDubai">--.--.----</span></div>
+      </div>
+      <div class="hl-wm-pin" data-city="mumbai" style="left:66.4%; top:44.0%;" title="Mumbai">
+        <div class="hl-wm-pin-dot hl-wm-dot-asia"></div>
+        <div class="hl-wm-pin-label"><span class="hl-wm-pin-city">Mumbai</span><span class="hl-wm-pin-time" id="hlWmTimeMumbai">--:--:--</span><span class="hl-wm-pin-date" id="hlWmDateMumbai">--.--.----</span></div>
+      </div>
+      <div class="hl-wm-pin" data-city="bangkok" style="left:68.7%; top:48.6%;" title="Bangkok">
+        <div class="hl-wm-pin-dot hl-wm-dot-asia"></div>
+        <div class="hl-wm-pin-label"><span class="hl-wm-pin-city">Bangkok</span><span class="hl-wm-pin-time" id="hlWmTimeBangkok">--:--:--</span><span class="hl-wm-pin-date" id="hlWmDateBangkok">--.--.----</span></div>
+      </div>
+      <div class="hl-wm-pin" data-city="singapur" style="left:72.6%; top:57.2%;" title="Singapur">
+        <div class="hl-wm-pin-dot hl-wm-dot-asia"></div>
+        <div class="hl-wm-pin-label"><span class="hl-wm-pin-city">Singapur</span><span class="hl-wm-pin-time" id="hlWmTimeSingapur">--:--:--</span><span class="hl-wm-pin-date" id="hlWmDateSingapur">--.--.----</span></div>
+      </div>
+      <div class="hl-wm-pin" data-city="shanghai" style="left:79.0%; top:37.6%;" title="Shanghai">
+        <div class="hl-wm-pin-dot hl-wm-dot-asia"></div>
+        <div class="hl-wm-pin-label"><span class="hl-wm-pin-city">Shanghai</span><span class="hl-wm-pin-time" id="hlWmTimeShanghai">--:--:--</span><span class="hl-wm-pin-date" id="hlWmDateShanghai">--.--.----</span></div>
+      </div>
+      <div class="hl-wm-pin" data-city="tokyo" style="left:84.6%; top:35.6%;" title="Tokio">
+        <div class="hl-wm-pin-dot hl-wm-dot-asia"></div>
+        <div class="hl-wm-pin-label"><span class="hl-wm-pin-city">Tokio</span><span class="hl-wm-pin-time" id="hlWmTimeTokyo">--:--:--</span><span class="hl-wm-pin-date" id="hlWmDateTokyo">--.--.----</span></div>
+      </div>
+
+      <!-- OZEANIEN -->
+      <div class="hl-wm-pin" data-city="sydney" style="left:84.8%; top:77.8%;" title="Sydney">
+        <div class="hl-wm-pin-dot hl-wm-dot-oceania"></div>
+        <div class="hl-wm-pin-label"><span class="hl-wm-pin-city">Sydney</span><span class="hl-wm-pin-time" id="hlWmTimeSydney">--:--:--</span><span class="hl-wm-pin-date" id="hlWmDateSydney">--.--.----</span></div>
+      </div>
+      <div class="hl-wm-pin" data-city="auckland" style="left:93.0%; top:85.6%;" title="Auckland">
+        <div class="hl-wm-pin-dot hl-wm-dot-oceania"></div>
+        <div class="hl-wm-pin-label"><span class="hl-wm-pin-city">Auckland</span><span class="hl-wm-pin-time" id="hlWmTimeAuckland">--:--:--</span><span class="hl-wm-pin-date" id="hlWmDateAuckland">--.--.----</span></div>
+      </div>
+
+      <!-- NORDAMERIKA -->
+      <div class="hl-wm-pin" data-city="honolulu" style="left:6.2%; top:44.8%;" title="Honolulu">
+        <div class="hl-wm-pin-dot hl-wm-dot-na"></div>
+        <div class="hl-wm-pin-label"><span class="hl-wm-pin-city">Honolulu</span><span class="hl-wm-pin-time" id="hlWmTimeHonolulu">--:--:--</span><span class="hl-wm-pin-date" id="hlWmDateHonolulu">--.--.----</span></div>
+      </div>
+      <div class="hl-wm-pin" data-city="la" style="left:11.0%; top:38.8%;" title="Los Angeles">
+        <div class="hl-wm-pin-dot hl-wm-dot-na"></div>
+        <div class="hl-wm-pin-label"><span class="hl-wm-pin-city">Los Angeles</span><span class="hl-wm-pin-time" id="hlWmTimeLa">--:--:--</span><span class="hl-wm-pin-date" id="hlWmDateLa">--.--.----</span></div>
+      </div>
+      <div class="hl-wm-pin" data-city="chicago" style="left:18.0%; top:33.6%;" title="Chicago">
+        <div class="hl-wm-pin-dot hl-wm-dot-na"></div>
+        <div class="hl-wm-pin-label"><span class="hl-wm-pin-city">Chicago</span><span class="hl-wm-pin-time" id="hlWmTimeChicago">--:--:--</span><span class="hl-wm-pin-date" id="hlWmDateChicago">--.--.----</span></div>
+      </div>
+      <div class="hl-wm-pin" data-city="ny" style="left:24.8%; top:36.0%;" title="New York">
+        <div class="hl-wm-pin-dot hl-wm-dot-na"></div>
+        <div class="hl-wm-pin-label"><span class="hl-wm-pin-city">New York</span><span class="hl-wm-pin-time" id="hlWmTimeNy">--:--:--</span><span class="hl-wm-pin-date" id="hlWmDateNy">--.--.----</span></div>
+      </div>
+      <div class="hl-wm-pin" data-city="mexiko" style="left:16.2%; top:46.8%;" title="Mexiko-Stadt">
+        <div class="hl-wm-pin-dot hl-wm-dot-na"></div>
+        <div class="hl-wm-pin-label"><span class="hl-wm-pin-city">Mexiko-Stadt</span><span class="hl-wm-pin-time" id="hlWmTimeMexiko">--:--:--</span><span class="hl-wm-pin-date" id="hlWmDateMexiko">--.--.----</span></div>
+      </div>
+
+      <!-- SÜDAMERIKA -->
+      <div class="hl-wm-pin" data-city="bogota" style="left:25.2%; top:52.2%;" title="Bogotá">
+        <div class="hl-wm-pin-dot hl-wm-dot-sa"></div>
+        <div class="hl-wm-pin-label"><span class="hl-wm-pin-city">Bogotá</span><span class="hl-wm-pin-time" id="hlWmTimeBogota">--:--:--</span><span class="hl-wm-pin-date" id="hlWmDateBogota">--.--.----</span></div>
+      </div>
+      <div class="hl-wm-pin" data-city="rio" style="left:32.2%; top:65.6%;" title="Rio de Janeiro">
+        <div class="hl-wm-pin-dot hl-wm-dot-sa"></div>
+        <div class="hl-wm-pin-label"><span class="hl-wm-pin-city">Rio</span><span class="hl-wm-pin-time" id="hlWmTimeRio">--:--:--</span><span class="hl-wm-pin-date" id="hlWmDateRio">--.--.----</span></div>
+      </div>
+      <div class="hl-wm-pin" data-city="buenos" style="left:30.0%; top:74.4%;" title="Buenos Aires">
+        <div class="hl-wm-pin-dot hl-wm-dot-sa"></div>
+        <div class="hl-wm-pin-label"><span class="hl-wm-pin-city">Buenos Aires</span><span class="hl-wm-pin-time" id="hlWmTimeBuenos">--:--:--</span><span class="hl-wm-pin-date" id="hlWmDateBuenos">--.--.----</span></div>
+      </div>
+
+      </div>
+    </div>
+    <button type="button" class="hl-wm-fs-btn" id="hlWmFsBtn" aria-label="Vollbild umschalten" title="Vollbild umschalten (Klick oder ESC)">
+      <svg class="hl-wm-ico-open" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
+      <svg class="hl-wm-ico-close" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3v3a2 2 0 0 1-2 2H3M21 8h-3a2 2 0 0 1-2-2V3M3 16h3a2 2 0 0 1 2 2v3M16 21v-3a2 2 0 0 1 2-2h3"/></svg>
+    </button>
+  </div>
+
+  <div class="hl-wm-legend" aria-hidden="true">
+    <span><i style="background:#2563eb"></i> UTC</span>
+    <span><i style="background:#0d9488"></i> Köln</span>
+    <span><i style="background:#0f172a"></i> Europa</span>
+    <span><i style="background:#d97706"></i> Afrika</span>
+    <span><i style="background:#7c3aed"></i> Asien</span>
+    <span><i style="background:#334155"></i> Nordamerika</span>
+    <span><i style="background:#db2777"></i> Südamerika</span>
+    <span><i style="background:#ea580c"></i> Ozeanien</span>
+  </div>
+  <div class="hl-wm-foot">Tipp: Klick auf die Karte öffnet das Vollbild — ESC oder erneuter Klick schließt es wieder.</div>
+</div>
+<script>
+(function(){
+  var cities=[
+    {suf:'Utc', zone:'Etc/UTC'},
+    {suf:'Koeln', zone:'Europe/Berlin'},
+    {suf:'London', zone:'Europe/London'},
+    {suf:'Paris', zone:'Europe/Paris'},
+    {suf:'Reykjavik', zone:'Atlantic/Reykjavik'},
+    {suf:'Moskau', zone:'Europe/Moscow'},
+    {suf:'Istanbul', zone:'Europe/Istanbul'},
+    {suf:'Dubai', zone:'Asia/Dubai'},
+    {suf:'Mumbai', zone:'Asia/Kolkata'},
+    {suf:'Bangkok', zone:'Asia/Bangkok'},
+    {suf:'Singapur', zone:'Asia/Singapore'},
+    {suf:'Shanghai', zone:'Asia/Shanghai'},
+    {suf:'Tokyo', zone:'Asia/Tokyo'},
+    {suf:'Sydney', zone:'Australia/Sydney'},
+    {suf:'Auckland', zone:'Pacific/Auckland'},
+    {suf:'Honolulu', zone:'Pacific/Honolulu'},
+    {suf:'La', zone:'America/Los_Angeles'},
+    {suf:'Chicago', zone:'America/Chicago'},
+    {suf:'Ny', zone:'America/New_York'},
+    {suf:'Mexiko', zone:'America/Mexico_City'},
+    {suf:'Bogota', zone:'America/Bogota'},
+    {suf:'Rio', zone:'America/Sao_Paulo'},
+    {suf:'Buenos', zone:'America/Argentina/Buenos_Aires'},
+    {suf:'Kairo', zone:'Africa/Cairo'},
+    {suf:'Nairobi', zone:'Africa/Nairobi'},
+    {suf:'Kapstadt', zone:'Africa/Johannesburg'}
+  ];
+  function tick(){
+    var now=new Date(),i,c,te,de;
+    for(i=0;i<cities.length;i++){
+      c=cities[i];
+      te=document.getElementById('hlWmTime'+c.suf);
+      de=document.getElementById('hlWmDate'+c.suf);
+      if(!te||!de) continue;
+      try{
+        te.textContent=now.toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit',second:'2-digit',hourCycle:'h23',timeZone:c.zone});
+        de.textContent=now.toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric',timeZone:c.zone});
+      }catch(e){}
+    }
+  }
+  // Grayline: korrekt elliptisch per Pixel (Amateurfunk) – Canvas
+  function declinationForDate(d){
+    var start = new Date(d.getUTCFullYear(),0,0);
+    var day = Math.floor((d - start)/86400000);
+    return 23.44 * Math.sin((360/365)*(day - 81) * Math.PI/180);
+  }
+  function updateNight(){
+    var canvas = document.getElementById('hlWmNightCanvas');
+    if(!canvas) return;
+    var ctx = canvas.getContext('2d');
+    if(!ctx) return;
+    var now = new Date();
+    var utcH = now.getUTCHours() + now.getUTCMinutes()/60 + now.getUTCSeconds()/3600 + now.getUTCMilliseconds()/3600000;
+    var subsolarLon = (12 - utcH) * 15; // -180..180
+    var decl = declinationForDate(now);
+    var declRad = decl * Math.PI/180;
+    var w = canvas.width, h = canvas.height;
+    // Clear
+    ctx.clearRect(0,0,w,h);
+    // Für schönen weichen Grayline-Rand: 12° Dämmerung (6° beidseitig)
+    var img = ctx.createImageData(w, h);
+    var data = img.data;
+    var sinDecl = Math.sin(declRad);
+    var cosDecl = Math.cos(declRad);
+    for(var y=0; y<h; y++){
+      // Mercator lat für y
+      var yNorm = y / h; // 0 top, 1 bottom
+      var latRad = Math.atan(Math.sinh(Math.PI * (1 - 2*yNorm)));
+      var sinLat = Math.sin(latRad);
+      var cosLat = Math.cos(latRad);
+      for(var x=0; x<w; x++){
+        var lon = (x / w) * 360 - 180;
+        var Hdeg = lon - subsolarLon;
+        // norm to -180..180
+        Hdeg = ((Hdeg+180)%360+360)%360-180;
+        var HRad = Hdeg * Math.PI/180;
+        var sinElev = sinLat * sinDecl + cosLat * cosDecl * Math.cos(HRad);
+        // h < -6° => Nacht, h > 6° => Tag, dazwischen Dämmerung
+        var alpha = 0;
+        if(sinElev < -0.104528) { // sin(-6°) ≈ -0.1045
+          alpha = 0.42 * 255; // Nacht dunkel
+        } else if(sinElev > 0.104528) {
+          alpha = 0; // Tag transparent
+        } else {
+          // Dämmerung  -6° .. +6° linear
+          var t = (sinElev + 0.104528) / 0.209056; // 0..1
+          alpha = (1 - t) * 0.42 * 255;
+        }
+        if(alpha > 2){
+          var idx = (y*w + x)*4;
+          data[idx] = 15; data[idx+1]=23; data[idx+2]=42; data[idx+3]=alpha;
+        }
+      }
+    }
+    ctx.putImageData(img, 0,0);
+  }
+  updateNight();
+  setInterval(updateNight, 60000);
+  tick();
+  setInterval(tick,1000);
+
+  // Vollbild: Klick auf die Karte (mit Fixed-Fallback bei blockiertem Fullscreen, z. B. iOS/iframe)
+  var mapWrap = document.getElementById('hlWmMapWrap');
+  if(mapWrap){
+    function hlWmFsActive(){
+      return document.fullscreenElement===mapWrap || mapWrap.classList.contains('hl-wm-fs-fallback');
+    }
+    function hlWmFsEnter(){
+      var done=false, r;
+      try{
+        if(mapWrap.requestFullscreen){
+          r=mapWrap.requestFullscreen();
+          if(r&&r.catch){r.catch(function(){mapWrap.classList.add('hl-wm-fs-fallback');});}
+          done=true;
+        }else if(mapWrap.webkitRequestFullscreen){
+          mapWrap.webkitRequestFullscreen(); done=true;
+        }
+      }catch(e){}
+      if(!done){mapWrap.classList.add('hl-wm-fs-fallback');}
+    }
+    function hlWmFsExit(){
+      var r;
+      try{
+        if(document.fullscreenElement&&document.exitFullscreen){
+          r=document.exitFullscreen();
+          if(r&&r.catch){r.catch(function(){});}
+        }else if(document.webkitFullscreenElement&&document.webkitExitFullscreen){
+          document.webkitExitFullscreen();
+        }
+      }catch(e){}
+      mapWrap.classList.remove('hl-wm-fs-fallback');
+    }
+    mapWrap.addEventListener('click',function(){
+      if(hlWmFsActive()){hlWmFsExit();}else{hlWmFsEnter();}
+    });
+    document.addEventListener('keydown',function(ev){
+      if((ev.key==='Escape'||ev.keyCode===27)&&mapWrap.classList.contains('hl-wm-fs-fallback')){
+        hlWmFsExit();
+      }
+    });
+  }
+})();
+</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a3c04825dd49cf59',t:'MTc4OTU2NjAxNA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
